@@ -1,0 +1,86 @@
+{\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fswiss\fcharset0 Arial;}{\f1\froman\fcharset0 Times New Roman;}}
+{\*\generator Msftedit 5.41.15.1503;}\viewkind4\uc1\pard\b\f0\fs40 Packet Sniffer and Analyze Tutorial\b0\fs20\par
+\par
+\fs28 1. Introduction.\par
+\par
+\fs20 A packet sniffer captures packets that are sent and received by programs that uses internet like internet explorer, yahoo messenger and all other programs that send and receive data form the internet. when a program receives data from the internet, the data is chopped into smaller packets and sent to the program. normally the maximum packet size is 1500 bytes. the receiving program then arranges those packets and builds the data that was sent. a packet sniffer will get a copy of those packets and the packets will be sent to the programs normally. thus a packet sniffer cannot be used to filter packets. firewalls can filter packets. packet sniffers can be used to know what data are transferred between between the programs and internet. It can also be used to view some data programs won't show you. we are going to make a program that captures packets, analyzes the data and shows the important parts on screen. \par
+\par
+There are some ways to capture packet in windows. The most common are\par
+\par
+1. raw packet capture ( windows 2000/XP. only).\par
+2. winpcap capture driver\par
+\par
+The raw sockets method is easy. But the raw packet capture works only in windows 2000/xp and with some network cards it won't capture outgoing packets. and with dialup connection it is not possible to capture outgoing packets. this is a problem. if raw socekts suits your needs you can go with it. but what if you are on dialup or your network card don't capture outgoing packets or you're using windows 98/ME? To resolve these we can use winpcap packet capture driver which is free. The winpcap driver did not have dialup support prior to version 3.1 but in the latest version(  the 3.1 release version not 3.1 beta) dialup is supported and it also captures outgoing packets. So we are going to use winpcap in our program.\par
+\par
+Now if you program winpcap directly in VB then you have to do a lot of low level programming. we don't want to do that. we just want to develop a program that will capture packets and will filter the packets( using src/dest ip, and port ) and then we will analyze the packet data and and do something with it. we can use a dll function library that hides all the winpcap low level initializations. There are some available like\par
+\par
+1. vbpcap \par
+2. packetvb \par
+3. packetx\par
+\par
+packetx is not free and packetvb is an activex control and it gives a very common error - "activex can't create object". I found in microsoft knowledge base that this error happens when winsock is initialized in runtime. they suggest putting winsock control in a form. since we are not modifying the packetvb dll and we don't want to pay for packetx, it leaves us only with vbpcap. this is a nice dll (not activex) and it runs fine on my machine( winxp sp1) but it should also works on any version of windows. \par
+\par
+\fs28 2. Setting up your System\fs20\par
+\par
+First of all you need the following things.\par
+1. winpcap 3.1      http://www.winpcap.org\par
+\pard\sb100\sa100 2. vbpcap \f1\fs24 0.4.0\f0\fs20     http://www.lorenzocerulli.tk\par
+\pard 3. commview or any packet sniffer of your choice. IP sniffer by erwan L will do.( http://erwan.l.free.fr )\par
+   Note: if you install commview dialup adapter, winpcap dialup driver may not work. if this happens remove commview dialup driver.\par
+4. yahoo messenger 7     http://messenger.yahoo.com\par
+\par
+download and install winpcap 3.1 release version. download vbpcap and put the vbpcap.dll in your C:\\WINDOWS\\system folder and restart. Note the packetvb library's file name is also vbpcap.dll so search your windows folder for "vbpcap.dll" and if you find any delete them before copying vbpcap.dll.\par
+\par
+\fs28 3. Analyzing Packets\fs20\par
+\par
+We will make a simple program that captures Instant Messages from Yahoo Messenger. I will also show you My Way of how to sequentially search an array for multiple strings (\b\i O\i0 n\b0  complexity) that you will need specially if you want to analyze packet data from game server..\par
+\par
+Close all the programs that are using internet. this is becasue we want to capture only the packets that are sent to yahoo messenger. you can use a program like netgrid/dumeter to see your network activity or use windows xp task manager networking tab. Make sure there is not much internet activity otherwise we will capture a lot of unnecessary packets. start yahoo messenger and go to a chat room. start commview, select your network adapter and start capturing packets. After you see some chat text in the chat room and some packets in commview( or sniffer of ur choice ), stop packet capture. Now lets view some packets. Here is a sample packet from commview.\par
+\par
+\par
+0x0000   00 00 01 00 00 00 BC 88-20 00 01 00 08 00 45 00   ......\'bc\'88 .....E.\par
+0x0010   00 C4 21 B3 40 00 31 06-C3 62 D8 9B C1 8A 45 47   .\'c4!\'b3@.1.\'c3b\'d8\'9b\'c1\'8aEG\par
+0x0020   84 B1 13 BA 08 04 8F 64-AF 90 95 06 5C 85 50 18   \'84\'b1.\'ba..\'8fd\'af\'90\bullet .\\\'85P.\par
+0x0030   FA 00 A4 FE 00 00 59 4D-53 47 6E 33 30 6C 00 88   \'fa.\'a4\'fe..YMSGn30l.\'88\par
+0x0040   00 A8 00 00 00 01 00 00-00 00 31 30 34 C0 80 4E   .\'a8........104\'c0\'80N\par
+0x0050   65 77 20 59 6F 72 6B 3A-31 C0 80 31 30 39 C0 80   ew York:1\'c0\'80109\'c0\'80\par
+0x0060   74 6F 6E 79 5F 69 73 5F-68 69 73 5F 6E 61 6D 65   tony_is_his_name\par
+0x0070   C0 80 31 31 37 C0 80 3C-46 41 44 45 20 23 30 39   \'c0\'80117\'c0\'80<FADE #09\par
+0x0080   30 32 35 39 2C 23 66 33-38 39 31 34 2C 23 32 30   0259,#f38914,#20\par
+0x0090   30 37 36 37 3E 3C 66 6F-6E 74 20 66 61 63 65 3D   0767><font face=\par
+0x00A0   22 46 61 74 22 20 73 69-7A 65 3D 22 32 30 22 3E   "Fat" size="20">\par
+0x00B0   69 20 67 61 76 65 20 75-70 20 6F 6E 20 64 61 74   i gave up on dat\par
+0x00C0   3C 2F 46 41 44 45 3E C0-80 31 32 34 C0 80 31 C0   </FADE>\'c0\'80124\'c0\'801\'c0\par
+0x00D0   80 00                                                                     \'80.\par
+\par
+The first 54 bytes( 0x0000 to 0x0035) are the ethernet, ip and tcp header and after that the data begins. click the header information fields in your packet sniffer and the corresponding byte in the header will be highlighted. yahoo messenger packets will always start with "YMSG" as the first four bytes of data. we cant see that byte 54-57 is "YMSG". So this is a ym packet. \par
+\par
+In the packet look for the text that appeared in the ym chat window. in this packet I see the chat text "i gave up on dat" which appeared on my ym chat window. I also find the room name "New York:1" and the nick of the chat sender "tony_is_his_name". watch some more packets like this. you will find \par
+\par
+1. the room name appears between bytes "34 C0 80" and "C0 80"\par
+2. the chat senders name appears between bytes "31 30 39 C0 80" and "C0 80"\par
+3. the chat text appears between bytes "31 31 37 C0 80" and "C0 80"\par
+the chat text contains html formatting code but we will not parse that in our example program.\par
+\par
+This packet analysis part is the most important one. this is where your program is different from all the rest. since the people that manages servers will not tell us about the contents of the packets, we will have to analyze ourselves. if you analyze packets from a game server, you can record the game with a dv cam. then you can later watch the packets and the recorded video to see the flow of events. my dv cam works well with laptop's LCD monitor but flickers with desktop crt monitor. if you dont have a dv cam you can write some of the events that occured in the game.\par
+\par
+Now with our packets analyzed we will start planning our sample program. In our main form we will initialize vbpcap which will strat winpcap. then we will add the available network adapters in a combo box user will select one network driver here.. we will have two command buttons "Start" and "Stop" to start and stop capturing packets. when the user clicks the "Start" button the program will select the adapter that is shown in the combo box and enter the packet capturing loop. the VpCapture function captures  packet. many programs uses the internet simultaneously and our sample program will capture all those packets. we want only those that are sent to yahoo messenger. we can use some src/dest ip and port filtering here so that our program have to analyze less packets. you can see what ip and ports a program uses using a utility like CurrPorts(download http://www.nirsoft.net). yahoo messenger uses multiple ip so we will not filter ip in our example program. but we know ym will not use the first 1024 reserved ports so we will check to see if the incoming packet's src/dest port is less than 1024. if it is less than 1024 then we will not analyze that packet. then we will see if the first four bytes of data is "YMSG". if not then we drop that packet. if the first four bytes are "YMSG" then we will get the chat senders name and chat text. Note here all the packets that begin with "YMSG" are not chat text. There are many like ppl join/leave a room, buzz etc. but the chat text will always appear btn bytes "31 31 37 C0 80" and "C0 80" as stated earlier.\par
+\par
+when you make your own packet sniffer program you will want to search packet data for several string sequentially and if found do something. I heard there is a built in way to search multiple substrings but I don't know it. and i also heard those built in functions are slower. I do sequential multiple string search in a way that has \b\i O\i0 n\b0  complexity but you may or may not like it. It can search variable length substrings but you have to know all of those substrings when programming. In almost everytime you should know what strings you need to search for when programming. a game server will generally send its game's many status after some particular string or bytes. we will use my string search method in this program to search the chat text for counting the number of occurence of words "any", "from", "for", "who" and "why". you can use this method to search for strings in the packet data buffer.\par
+\par
+\fs28 4. VB coding\par
+\par
+\fs20 Before starting vb code you should read the vbpcap documentation. its very short and only describes the vbpcap functions. you should also run the included vbpcaptest program and see its behavior. also download the YANA program from http://www.lorenzocerulli.tk. now we look at our code. in Form_Load() you call VBPcapInit which will initialize vbpcap engine and return the number of network adapters present. we then add those network adapters to a combo box. when the program runs the user first have to select the adapter he wants to capture from this combo box. after selecting adapter the user clicks start button to start packet capturing. the cmdStart method calls  vpSetCurrentAdapter which tells vbpcap what adapter to use. then it calls capture functions which contains the packet capture loop. vpBegin opens the current adapter. then we have the packet capture loop. vpCapture(cbuff) will return a value > 0 if a packet have arrived and cbuff() will contain the packet header and data. the first 54 bytes of cbuff() are headers and the rest are data. now we decode the ethernet, ip and tcp headers to get the src/dest ip and port no. we will not filter ip in our example program but we check to see if our packet's src/dest port no is higher than 1024. the first 1024 ports are reserved for special purposes( for example 80 for http, 21 for ftp) and yahoo messenger don't use those. so we can drop those packets that have src/dest port <1024. we set a variable named "evaluate" to 0 if the src/dest port is less than 1024. then we get the first four bytes of data. remember first 54 bytes are headers so we get bytes 54 to 57 of cbuff(). then  we check to see if evaluate = 1 and the first four bytes of the packet data are "YMSG". if both are true then we grab the chat senders nick and the chat text from two functions getNick and getChat. getNick will return the string between "31 30 39 C0 80" and "C0 80" and getChat will return the string between "31 31 37 C0 80" and "C0 80". yahoo messenger chat text contains html formatting codes between <>. so we will get the text after the last >. some chat text may use multiple font color,type,size etc. we will get the last part of the text since we don't want to parse html code in this program. after getting the chat text we send the chatText string to wordCount method which will count how many times the words "any", "from", "for", "who" and "why" appeared in the chat text. again, this way of multiple substring search is my way. i use it in my programs and it works fine for me. if you don't like it do it your way. i put it here to show those who don't know or wants an easy way to search for multiple strings. after we count the words, we simply put the chat senders name and chat text to a textbox. when the user clicks the Stop button then the loop variable "go" is set to false and the program stops capturing packets. but the the adapter is not released yet. in Form_QueryUnload() we place VBPcapTerminate which releases adapter and resets flags. Form_QueryUnload method is automatically called when the user clicks the exit button or clicks the close (X) button. This ensures we release all memory used before exiting the program.\par
+\par
+\fs28 5. Conclusion\par
+\par
+\fs20 The most important part of a packet sniffing program is to analyze the packets correctly. if you can do that then the rest is easy. when you have made your packet sniffer, next you will like to send packets to a server. I will cover that in the next turorial. happy sniffing.\par
+\par
+Thanks\par
+ruleworld\par
+\par
+for questions or suggestions,\par
+email: ruleworld@gmail.com\par
+\par
+}
+ 
